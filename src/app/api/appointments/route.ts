@@ -1,7 +1,8 @@
+import { API } from "@/lib/API";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const response = await fetch("http://localhost:3000/appointments");
+  const response = await API.get("/appointments");
 
-  return NextResponse.json(await response.json());
+  return NextResponse.json(await response.data);
 }
