@@ -35,7 +35,7 @@ export default function RootLayout({
   return (
     <html lang="pt-br">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <main className="relative z-10 container mx-auto p-4">{children}</main>
+        <main className="relative z-10 container mx-auto">{children}</main>
         <BubbleBackground />
       </body>
     </html>
