@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useMemo, useState } from "react";
 import Particles, { initParticlesEngine } from "@tsparticles/react";
 import { type Container, type ISourceOptions, MoveDirection, OutMode } from "@tsparticles/engine";
@@ -32,7 +34,7 @@ const BubbleBackground = () => {
     () => ({
       background: {
         color: {
-          value: "#0d47a1",
+          value: "#f0f4f8", // Fundo claro e clean
         },
       },
       fpsLimit: 120,
@@ -44,54 +46,67 @@ const BubbleBackground = () => {
           },
           onHover: {
             enable: true,
-            mode: "repulse",
+            mode: "attract", // Efeito suave de atração
           },
         },
         modes: {
           push: {
-            quantity: 4,
+            quantity: 3, // Menos partículas por clique para um efeito mais leve
           },
-          repulse: {
-            distance: 200,
-            duration: 0.4,
+          attract: {
+            distance: 150,
+            duration: 0.3,
+            speed: 1.5,
           },
         },
       },
       particles: {
         color: {
-          value: "#ffffff",
+          value: ["#567d99", "#7da0b4", "#a6bbc8"], // Cores mais escuras para maior contraste
         },
         links: {
-          color: "#ffffff",
-          distance: 150,
+          color: "#7da0b4", // Cor clara para os links, mas contrastante
+          distance: 130,
           enable: true,
-          opacity: 0.5,
+          opacity: 0.6, // Aumentar a opacidade dos links para maior visibilidade
           width: 1,
         },
         move: {
           direction: MoveDirection.none,
           enable: true,
           outModes: {
-            default: OutMode.out,
+            default: OutMode.out, // Manter partículas fora da tela
           },
           random: false,
-          speed: 6,
+          speed: 2, // Movimento mais suave e lento
           straight: false,
         },
         number: {
           density: {
             enable: true,
           },
-          value: 80,
+          value: 60, // Menos partículas para um visual mais clean
         },
         opacity: {
-          value: 0.5,
+          value: { min: 0.4, max: 0.7 }, // Aumentar a opacidade das partículas
+          animation: {
+            enable: true,
+            speed: 0.5,
+            minimumValue: 0.4,
+            sync: false,
+          },
         },
         shape: {
-          type: "circle",
+          type: "circle", // Manter o círculo para simplicidade
         },
         size: {
-          value: { min: 1, max: 5 },
+          value: { min: 3, max: 5 }, // Aumentar o tamanho das partículas
+          animation: {
+            enable: true,
+            speed: 3,
+            minimumValue: 1,
+            sync: false,
+          },
         },
       },
       detectRetina: true,
