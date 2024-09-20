@@ -13,15 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Loader2, Calendar as CalendarIcon, Clock, User } from "lucide-react";
 import dayjs from "dayjs";
 import "dayjs/locale/pt-br";
@@ -54,49 +46,18 @@ interface DailyAppointments {
   slots: TimeSlot[];
 }
 
-const fetchAppointments = async (): Promise<Appointment[]> => {
+const fetchWeeklyAppointmentsByDay = async (
+  date: string
+): Promise<DailyAppointments[]> => {
   try {
-    const res = await axios.get("/api/appointments");
+    const res = await axios.get("/api/calendar/week", {
+      params: { date },
+    });
     return res.data;
   } catch (error) {
     console.error("Erro ao buscar dados:", error);
     throw error;
   }
-};
-const fetchWeeklyAppointmentsByDay = async (): Promise<DailyAppointments[]> => {
-  try {
-    const res = await axios.get("/api/calendar/week");
-    return res.data;
-  } catch (error) {
-    console.error("Erro ao buscar dados:", error);
-    throw error;
-  }
-};
-
-const generateTimeSlots = (
-  date: dayjs.Dayjs,
-  appointments: Appointment[]
-): TimeSlot[] => {
-  const slots: TimeSlot[] = [];
-  const now = dayjs();
-  for (let hour = 8; hour < 18; hour++) {
-    for (let minute = 0; minute < 60; minute += 30) {
-      const time = `${hour.toString().padStart(2, "0")}:${minute
-        .toString()
-        .padStart(2, "0")}`;
-      const slotDate = date.hour(hour).minute(minute);
-      const appointment = appointments.find(
-        (app) => dayjs(app.date).isSame(date, "day") && app.time === time
-      );
-      slots.push({
-        time,
-        isAvailable: !appointment,
-        isPast: slotDate.isBefore(now),
-        appointment,
-      });
-    }
-  }
-  return slots;
 };
 
 export default function AdminCalendar() {
@@ -119,30 +80,16 @@ export default function AdminCalendar() {
     useState<DailyAppointments[]>();
 
   useEffect(() => {
-    // loadAppointments();
-    loadWeeklyAppointmentsByDay();
-  }, []);
+    const formattedDate = currentDate.format("YYYY-MM-DD");
+    console.log("formattedDate", formattedDate);
+    loadWeeklyAppointmentsByDay(formattedDate);
+  }, [currentDate]);
 
-  // const loadAppointments = async () => {
-  //   setIsLoading(true);
-  //   setError(null);
-  //   try {
-  //     const data = await fetchAppointments();
-  //     setAppointments(data);
-  //   } catch (err) {
-  //     setError(
-  //       "Falha ao carregar os agendamentos. Por favor, tente novamente."
-  //     );
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
-  const loadWeeklyAppointmentsByDay = async () => {
+  const loadWeeklyAppointmentsByDay = async (date: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await fetchWeeklyAppointmentsByDay();
+      const data = await fetchWeeklyAppointmentsByDay(date);
       setAppointmentsByDay(data);
     } catch (err) {
       setError(
@@ -231,63 +178,6 @@ export default function AdminCalendar() {
     );
   };
 
-  // const renderMonthView = () => {
-  //   const startOfMonth = currentDate.startOf("month");
-  //   const endOfMonth = currentDate.endOf("month");
-  //   const startDate = startOfMonth.startOf("week");
-  //   const endDate = endOfMonth.endOf("week");
-  //   const days = [];
-  //   let day = startDate;
-
-  //   while (day.isBefore(endDate) || day.isSame(endDate, "day")) {
-  //     days.push(day);
-  //     day = day.add(1, "day");
-  //   }
-
-  //   return (
-  //     <div className="grid grid-cols-7 gap-2">
-  //       {days.map((day) => (
-  //         <div
-  //           key={day.toString()}
-  //           className={`border p-2 ${
-  //             !day.isSame(currentDate, "month") ? "bg-gray-100" : ""
-  //           } ${day.isSame(dayjs(), "day") ? "bg-blue-100" : ""}`}
-  //           onClick={() => {
-  //             setSelectedDay(day);
-  //             setIsDayDialogOpen(true);
-  //           }}
-  //         >
-  //           <div className="font-semibold mb-2">{day.format("D")}</div>
-  //           <div className="flex flex-col space-y-1">
-  //             {appointments
-  //               .filter((app) => dayjs(app.date).isSame(day, "day"))
-  //               .map((app) => (
-  //                 <Badge
-  //                   key={app.id}
-  //                   variant="secondary"
-  //                   className="text-xs truncate cursor-pointer"
-  //                   onClick={(e) => {
-  //                     e.stopPropagation();
-  //                     setSelectedSlot({
-  //                       time: app.time,
-  //                       isAvailable: false,
-  //                       isPast: dayjs(`${app.date} ${app.time}`).isBefore(
-  //                         dayjs()
-  //                       ),
-  //                       appointment: app,
-  //                     });
-  //                     setIsSlotDialogOpen(true);
-  //                   }}
-  //                 >
-  //                   {app.time} - {app.name}
-  //                 </Badge>
-  //               ))}
-  //           </div>
-  //         </div>
-  //       ))}
-  //     </div>
-  //   );
-  // };
   const renderToolbar = () => {
     return (
       <div className="flex justify-between items-center mb-4">
