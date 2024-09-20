@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -44,26 +45,45 @@ interface TimeSlot {
   time: string;
   isAvailable: boolean;
   isPast: boolean;
-  appointment?: Appointment;
+  isFree?: boolean;
+  appointmentId?: string;
+}
+
+interface DailyAppointments {
+  date: string;
+  slots: TimeSlot[];
 }
 
 const fetchAppointments = async (): Promise<Appointment[]> => {
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  return [
-    { id: "1", date: "2023-06-15", time: "09:00", name: "João Silva" },
-    { id: "2", date: "2023-06-15", time: "10:30", name: "Maria Oliveira" },
-    { id: "3", date: "2023-06-16", time: "14:00", name: "Carlos Santos" },
-    { id: "4", date: "2023-06-20", time: "11:00", name: "Ana Pereira" },
-    { id: "5", date: "2023-06-22", time: "15:30", name: "Pedro Alves" },
-  ];
+  try {
+    const res = await axios.get("/api/appointments");
+    return res.data;
+  } catch (error) {
+    console.error("Erro ao buscar dados:", error);
+    throw error;
+  }
+};
+const fetchWeeklyAppointmentsByDay = async (): Promise<DailyAppointments[]> => {
+  try {
+    const res = await axios.get("/api/calendar/week");
+    return res.data;
+  } catch (error) {
+    console.error("Erro ao buscar dados:", error);
+    throw error;
+  }
 };
 
-const generateTimeSlots = (date: dayjs.Dayjs, appointments: Appointment[]): TimeSlot[] => {
+const generateTimeSlots = (
+  date: dayjs.Dayjs,
+  appointments: Appointment[]
+): TimeSlot[] => {
   const slots: TimeSlot[] = [];
   const now = dayjs();
   for (let hour = 8; hour < 18; hour++) {
     for (let minute = 0; minute < 60; minute += 30) {
-      const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
+      const time = `${hour.toString().padStart(2, "0")}:${minute
+        .toString()
+        .padStart(2, "0")}`;
       const slotDate = date.hour(hour).minute(minute);
       const appointment = appointments.find(
         (app) => dayjs(app.date).isSame(date, "day") && app.time === time
@@ -84,16 +104,23 @@ export default function AdminCalendar() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newAppointment, setNewAppointment] = useState({ date: "", time: "", name: "" });
+  const [newAppointment, setNewAppointment] = useState({
+    date: "",
+    time: "",
+    name: "",
+  });
   const [currentDate, setCurrentDate] = useState(dayjs());
   const [viewMode, setViewMode] = useState<"week" | "month">("week");
   const [selectedDay, setSelectedDay] = useState<dayjs.Dayjs | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [isSlotDialogOpen, setIsSlotDialogOpen] = useState(false);
   const [isDayDialogOpen, setIsDayDialogOpen] = useState(false);
+  const [appointmentsByDay, setAppointmentsByDay] =
+    useState<DailyAppointments[]>();
 
   useEffect(() => {
     loadAppointments();
+    loadWeeklyAppointmentsByDay();
   }, []);
 
   const loadAppointments = async () => {
@@ -103,7 +130,24 @@ export default function AdminCalendar() {
       const data = await fetchAppointments();
       setAppointments(data);
     } catch (err) {
-      setError("Falha ao carregar os agendamentos. Por favor, tente novamente.");
+      setError(
+        "Falha ao carregar os agendamentos. Por favor, tente novamente."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadWeeklyAppointmentsByDay = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await fetchWeeklyAppointmentsByDay();
+      setAppointmentsByDay(data);
+    } catch (err) {
+      setError(
+        "Falha ao carregar os agendamentos. Por favor, tente novamente."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -133,28 +177,27 @@ export default function AdminCalendar() {
     }
   };
 
-  const renderTimeSlots = (day: dayjs.Dayjs) => {
-    const slots = generateTimeSlots(day, appointments);
+  const renderTimeSlots = (slots: TimeSlot[]) => {
     return (
       <div className="grid grid-cols-2 gap-1">
         {slots.map((slot, index) => (
           <Button
             key={index}
-            variant={slot.isAvailable ? "outline" : "secondary"}
+            variant={slot.isFree ? "outline" : "secondary"}
             size="sm"
             className={`text-xs ${
               slot.isPast
                 ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                : slot.isAvailable
+                : slot.isFree
                 ? "hover:bg-green-100"
                 : "bg-blue-100 hover:bg-blue-200"
             }`}
-            onClick={() => {
-              if (!slot.isPast) {
-                setSelectedSlot(slot);
-                setIsSlotDialogOpen(true);
-              }
-            }}
+            // onClick={() => {
+            //   if (!slot.isPast) {
+            //     setSelectedSlot(slot);
+            //     setIsSlotDialogOpen(true);
+            //   }
+            // }}
             disabled={slot.isPast}
           >
             {slot.time}
@@ -165,19 +208,23 @@ export default function AdminCalendar() {
   };
 
   const renderWeekView = () => {
-    const startOfWeek = currentDate.startOf("week");
-    const endOfWeek = currentDate.endOf("week");
-    const days = Array.from({ length: 7 }, (_, i) => startOfWeek.add(i, "day"));
+    const today = dayjs().format("YYYY-MM-DD");
+
+    if (!appointmentsByDay) {
+      return null;
+    }
 
     return (
       <div className="grid grid-cols-7 gap-2">
-        {days.map((day) => (
+        {appointmentsByDay.map((day) => (
           <div
-            key={day.toString()}
-            className={`border p-2 ${day.isSame(dayjs(), "day") ? "bg-blue-100" : ""}`}
+            key={day.date}
+            className={`border p-2 ${day.date === today ? "bg-blue-100" : ""}`}
           >
-            <div className="font-semibold mb-2">{day.format("ddd DD/MM")}</div>
-            {renderTimeSlots(day)}
+            <div className="font-semibold mb-2">
+              {dayjs(day.date).format("ddd DD/MM")}
+            </div>
+            {renderTimeSlots(day.slots)}
           </div>
         ))}
       </div>
@@ -202,9 +249,9 @@ export default function AdminCalendar() {
         {days.map((day) => (
           <div
             key={day.toString()}
-            className={`border p-2 ${!day.isSame(currentDate, "month") ? "bg-gray-100" : ""} ${
-              day.isSame(dayjs(), "day") ? "bg-blue-100" : ""
-            }`}
+            className={`border p-2 ${
+              !day.isSame(currentDate, "month") ? "bg-gray-100" : ""
+            } ${day.isSame(dayjs(), "day") ? "bg-blue-100" : ""}`}
             onClick={() => {
               setSelectedDay(day);
               setIsDayDialogOpen(true);
@@ -224,7 +271,9 @@ export default function AdminCalendar() {
                       setSelectedSlot({
                         time: app.time,
                         isAvailable: false,
-                        isPast: dayjs(`${app.date} ${app.time}`).isBefore(dayjs()),
+                        isPast: dayjs(`${app.date} ${app.time}`).isBefore(
+                          dayjs()
+                        ),
                         appointment: app,
                       });
                       setIsSlotDialogOpen(true);
@@ -244,7 +293,9 @@ export default function AdminCalendar() {
     <div className="relative min-h-screen flex items-center justify-center p-4">
       <Card className="bg-white">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">Agenda Administrativa</CardTitle>
+          <CardTitle className="text-2xl font-bold">
+            Agenda Administrativa
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex justify-between items-center mb-4">
@@ -252,7 +303,9 @@ export default function AdminCalendar() {
               <Button
                 onClick={() =>
                   setCurrentDate((prev) =>
-                    viewMode === "week" ? prev.subtract(1, "week") : prev.subtract(1, "month")
+                    viewMode === "week"
+                      ? prev.subtract(1, "week")
+                      : prev.subtract(1, "month")
                   )
                 }
               >
@@ -262,7 +315,9 @@ export default function AdminCalendar() {
               <Button
                 onClick={() =>
                   setCurrentDate((prev) =>
-                    viewMode === "week" ? prev.add(1, "week") : prev.add(1, "month")
+                    viewMode === "week"
+                      ? prev.add(1, "week")
+                      : prev.add(1, "month")
                   )
                 }
               >
@@ -290,7 +345,10 @@ export default function AdminCalendar() {
                   <DialogHeader>
                     <DialogTitle>Criar Novo Agendamento</DialogTitle>
                   </DialogHeader>
-                  <form onSubmit={handleCreateAppointment} className="space-y-4">
+                  <form
+                    onSubmit={handleCreateAppointment}
+                    className="space-y-4"
+                  >
                     <div>
                       <Label htmlFor="date">Data</Label>
                       <div className="relative">
@@ -300,7 +358,10 @@ export default function AdminCalendar() {
                           type="date"
                           value={newAppointment.date}
                           onChange={(e) =>
-                            setNewAppointment({ ...newAppointment, date: e.target.value })
+                            setNewAppointment({
+                              ...newAppointment,
+                              date: e.target.value,
+                            })
                           }
                           className="pl-10"
                           required
@@ -316,7 +377,10 @@ export default function AdminCalendar() {
                           type="time"
                           value={newAppointment.time}
                           onChange={(e) =>
-                            setNewAppointment({ ...newAppointment, time: e.target.value })
+                            setNewAppointment({
+                              ...newAppointment,
+                              time: e.target.value,
+                            })
                           }
                           className="pl-10"
                           required
@@ -332,15 +396,24 @@ export default function AdminCalendar() {
                           type="text"
                           value={newAppointment.name}
                           onChange={(e) =>
-                            setNewAppointment({ ...newAppointment, name: e.target.value })
+                            setNewAppointment({
+                              ...newAppointment,
+                              name: e.target.value,
+                            })
                           }
                           className="pl-10"
                           required
                         />
                       </div>
                     </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : null}
                       {isLoading ? "Criando..." : "Criar Agendamento"}
                     </Button>
                   </form>
@@ -361,7 +434,9 @@ export default function AdminCalendar() {
             <div>
               <h2 className="text-xl font-semibold mb-4">
                 {viewMode === "week"
-                  ? `Semana de ${currentDate.startOf("week").format("DD/MM")} a ${currentDate
+                  ? `Semana de ${currentDate
+                      .startOf("week")
+                      .format("DD/MM")} a ${currentDate
                       .endOf("week")
                       .format("DD/MM")}`
                   : currentDate.format("MMMM YYYY")}
@@ -375,7 +450,9 @@ export default function AdminCalendar() {
         <DialogContent className="bg-white">
           <DialogHeader>
             <DialogTitle>
-              {selectedSlot?.isAvailable ? "Horário Disponível" : "Detalhes do Agendamento"}
+              {selectedSlot?.isAvailable
+                ? "Horário Disponível"
+                : "Detalhes do Agendamento"}
             </DialogTitle>
           </DialogHeader>
           {selectedSlot && (
@@ -404,7 +481,9 @@ export default function AdminCalendar() {
                   <p>Cliente: {selectedSlot.appointment?.name}</p>
                   <Button
                     variant="destructive"
-                    onClick={() => handleCancelAppointment(selectedSlot.appointment!.id)}
+                    onClick={() =>
+                      handleCancelAppointment(selectedSlot.appointment!.id)
+                    }
                     className="mt-2"
                   >
                     Cancelar Agendamento
@@ -418,9 +497,13 @@ export default function AdminCalendar() {
       <Dialog open={isDayDialogOpen} onOpenChange={setIsDayDialogOpen}>
         <DialogContent className="bg-white">
           <DialogHeader>
-            <DialogTitle>{selectedDay && selectedDay.format("DD 'de' MMMM")}</DialogTitle>
+            <DialogTitle>
+              {selectedDay && selectedDay.format("DD 'de' MMMM")}
+            </DialogTitle>
           </DialogHeader>
-          {selectedDay && <div className="space-y-4">{renderTimeSlots(selectedDay)}</div>}
+          {selectedDay && (
+            <div className="space-y-4">{renderTimeSlots(selectedDay)}</div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
