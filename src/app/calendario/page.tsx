@@ -27,7 +27,7 @@ dayjs.extend(isSameOrAfter);
 dayjs.locale("pt-br");
 
 interface Appointment {
-  id: string;
+  _id: string;
   date: string;
   time: string;
   name: string;
@@ -60,6 +60,16 @@ const fetchWeeklyAppointmentsByDay = async (
   }
 };
 
+const fetchDialogAppointment = async (id: string): Promise<Appointment> => {
+  try {
+    const res = await axios.get(`/api/appointment/${id}`);
+    return res.data;
+  } catch (error) {
+    console.error("Erro ao buscar dados:", error);
+    throw error;
+  }
+};
+
 export default function AdminCalendar() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -74,6 +84,8 @@ export default function AdminCalendar() {
   const [viewMode, setViewMode] = useState<"week" | "month">("week");
   const [selectedDay, setSelectedDay] = useState<dayjs.Dayjs | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
+  const [dialogAppointment, setDialogAppointment] =
+    useState<Appointment | null>(null);
   const [isSlotDialogOpen, setIsSlotDialogOpen] = useState(false);
   const [isDayDialogOpen, setIsDayDialogOpen] = useState(false);
   const [appointmentsByDay, setAppointmentsByDay] =
@@ -91,6 +103,26 @@ export default function AdminCalendar() {
     try {
       const data = await fetchWeeklyAppointmentsByDay(date);
       setAppointmentsByDay(data);
+    } catch (err) {
+      setError(
+        "Falha ao carregar os agendamentos. Por favor, tente novamente."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedSlot || selectedSlot.isFree) return;
+    loadDialogAppointment(selectedSlot.appointmentId || "");
+  }, [selectedSlot]);
+
+  const loadDialogAppointment = async (id: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await fetchDialogAppointment(id);
+      setDialogAppointment(data);
     } catch (err) {
       setError(
         "Falha ao carregar os agendamentos. Por favor, tente novamente."
@@ -124,6 +156,12 @@ export default function AdminCalendar() {
     }
   };
 
+  const handleSelectSlot = (slot: TimeSlot) => {
+    if (slot.isPast && slot.isFree) return;
+    setSelectedSlot(slot);
+    setIsSlotDialogOpen(true);
+  };
+
   const renderTimeSlots = (slots: TimeSlot[]) => {
     return (
       <div className="grid grid-cols-2 gap-1">
@@ -139,12 +177,7 @@ export default function AdminCalendar() {
                 ? "hover:bg-green-100"
                 : "bg-blue-100 hover:bg-blue-200"
             }`}
-            // onClick={() => {
-            //   if (!slot.isPast) {
-            //     setSelectedSlot(slot);
-            //     setIsSlotDialogOpen(true);
-            //   }
-            // }}
+            onClick={() => handleSelectSlot(slot)}
             disabled={slot.isPast}
           >
             {slot.time}
@@ -285,6 +318,12 @@ export default function AdminCalendar() {
     );
   };
 
+  const handleCloseDialog = () => {
+    setIsSlotDialogOpen(false);
+    setSelectedSlot(null);
+    setDialogAppointment(null);
+  };
+
   return (
     <div className="relative min-h-screen flex items-center justify-center p-4">
       {isLoading ? (
@@ -321,19 +360,19 @@ export default function AdminCalendar() {
         </Card>
       )}
 
-      <Dialog open={isSlotDialogOpen} onOpenChange={setIsSlotDialogOpen}>
+      <Dialog open={isSlotDialogOpen} onOpenChange={handleCloseDialog}>
         <DialogContent className="bg-white">
           <DialogHeader>
             <DialogTitle>
-              {selectedSlot?.isAvailable
+              {selectedSlot?.isFree
                 ? "Horário Disponível"
                 : "Detalhes do Agendamento"}
             </DialogTitle>
           </DialogHeader>
           {selectedSlot && (
             <div className="space-y-4">
-              <p>Horário: {selectedSlot.time}</p>
-              {selectedSlot.isAvailable ? (
+              <p>Horário: {selectedSlot?.time}</p>
+              {!selectedSlot?.appointmentId ? (
                 <div>
                   <p>Este horário está disponível para agendamento.</p>
                   <Button
@@ -353,12 +392,12 @@ export default function AdminCalendar() {
                 </div>
               ) : (
                 <div>
-                  <p>Cliente: {selectedSlot.appointment?.name}</p>
+                  <p>Cliente: {dialogAppointment?.name}</p>
                   <Button
                     variant="destructive"
-                    onClick={() =>
-                      handleCancelAppointment(selectedSlot.appointment!.id)
-                    }
+                    // onClick={() =>
+                    //   handleCancelAppointment(selectedSlot.appointment!.id)
+                    // }
                     className="mt-2"
                   >
                     Cancelar Agendamento
