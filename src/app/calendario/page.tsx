@@ -119,24 +119,24 @@ export default function AdminCalendar() {
     useState<DailyAppointments[]>();
 
   useEffect(() => {
-    loadAppointments();
+    // loadAppointments();
     loadWeeklyAppointmentsByDay();
   }, []);
 
-  const loadAppointments = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await fetchAppointments();
-      setAppointments(data);
-    } catch (err) {
-      setError(
-        "Falha ao carregar os agendamentos. Por favor, tente novamente."
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // const loadAppointments = async () => {
+  //   setIsLoading(true);
+  //   setError(null);
+  //   try {
+  //     const data = await fetchAppointments();
+  //     setAppointments(data);
+  //   } catch (err) {
+  //     setError(
+  //       "Falha ao carregar os agendamentos. Por favor, tente novamente."
+  //     );
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   const loadWeeklyAppointmentsByDay = async () => {
     setIsLoading(true);
@@ -231,206 +231,190 @@ export default function AdminCalendar() {
     );
   };
 
-  const renderMonthView = () => {
-    const startOfMonth = currentDate.startOf("month");
-    const endOfMonth = currentDate.endOf("month");
-    const startDate = startOfMonth.startOf("week");
-    const endDate = endOfMonth.endOf("week");
-    const days = [];
-    let day = startDate;
+  // const renderMonthView = () => {
+  //   const startOfMonth = currentDate.startOf("month");
+  //   const endOfMonth = currentDate.endOf("month");
+  //   const startDate = startOfMonth.startOf("week");
+  //   const endDate = endOfMonth.endOf("week");
+  //   const days = [];
+  //   let day = startDate;
 
-    while (day.isBefore(endDate) || day.isSame(endDate, "day")) {
-      days.push(day);
-      day = day.add(1, "day");
-    }
+  //   while (day.isBefore(endDate) || day.isSame(endDate, "day")) {
+  //     days.push(day);
+  //     day = day.add(1, "day");
+  //   }
 
+  //   return (
+  //     <div className="grid grid-cols-7 gap-2">
+  //       {days.map((day) => (
+  //         <div
+  //           key={day.toString()}
+  //           className={`border p-2 ${
+  //             !day.isSame(currentDate, "month") ? "bg-gray-100" : ""
+  //           } ${day.isSame(dayjs(), "day") ? "bg-blue-100" : ""}`}
+  //           onClick={() => {
+  //             setSelectedDay(day);
+  //             setIsDayDialogOpen(true);
+  //           }}
+  //         >
+  //           <div className="font-semibold mb-2">{day.format("D")}</div>
+  //           <div className="flex flex-col space-y-1">
+  //             {appointments
+  //               .filter((app) => dayjs(app.date).isSame(day, "day"))
+  //               .map((app) => (
+  //                 <Badge
+  //                   key={app.id}
+  //                   variant="secondary"
+  //                   className="text-xs truncate cursor-pointer"
+  //                   onClick={(e) => {
+  //                     e.stopPropagation();
+  //                     setSelectedSlot({
+  //                       time: app.time,
+  //                       isAvailable: false,
+  //                       isPast: dayjs(`${app.date} ${app.time}`).isBefore(
+  //                         dayjs()
+  //                       ),
+  //                       appointment: app,
+  //                     });
+  //                     setIsSlotDialogOpen(true);
+  //                   }}
+  //                 >
+  //                   {app.time} - {app.name}
+  //                 </Badge>
+  //               ))}
+  //           </div>
+  //         </div>
+  //       ))}
+  //     </div>
+  //   );
+  // };
+  const renderToolbar = () => {
     return (
-      <div className="grid grid-cols-7 gap-2">
-        {days.map((day) => (
-          <div
-            key={day.toString()}
-            className={`border p-2 ${
-              !day.isSame(currentDate, "month") ? "bg-gray-100" : ""
-            } ${day.isSame(dayjs(), "day") ? "bg-blue-100" : ""}`}
-            onClick={() => {
-              setSelectedDay(day);
-              setIsDayDialogOpen(true);
-            }}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center space-x-2">
+          <Button
+            onClick={() =>
+              setCurrentDate((prev) =>
+                viewMode === "week"
+                  ? prev.subtract(1, "week")
+                  : prev.subtract(1, "month")
+              )
+            }
           >
-            <div className="font-semibold mb-2">{day.format("D")}</div>
-            <div className="flex flex-col space-y-1">
-              {appointments
-                .filter((app) => dayjs(app.date).isSame(day, "day"))
-                .map((app) => (
-                  <Badge
-                    key={app.id}
-                    variant="secondary"
-                    className="text-xs truncate cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedSlot({
-                        time: app.time,
-                        isAvailable: false,
-                        isPast: dayjs(`${app.date} ${app.time}`).isBefore(
-                          dayjs()
-                        ),
-                        appointment: app,
-                      });
-                      setIsSlotDialogOpen(true);
-                    }}
-                  >
-                    {app.time} - {app.name}
-                  </Badge>
-                ))}
-            </div>
-          </div>
-        ))}
+            Anterior
+          </Button>
+          <Button onClick={() => setCurrentDate(dayjs())}>Hoje</Button>
+          <Button
+            onClick={() =>
+              setCurrentDate((prev) =>
+                viewMode === "week" ? prev.add(1, "week") : prev.add(1, "month")
+              )
+            }
+          >
+            Próximo
+          </Button>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>Novo Agendamento</Button>
+            </DialogTrigger>
+            <DialogContent className="bg-white">
+              <DialogHeader>
+                <DialogTitle>Criar Novo Agendamento</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleCreateAppointment} className="space-y-4">
+                <div>
+                  <Label htmlFor="date">Data</Label>
+                  <div className="relative">
+                    <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Input
+                      id="date"
+                      type="date"
+                      value={newAppointment.date}
+                      onChange={(e) =>
+                        setNewAppointment({
+                          ...newAppointment,
+                          date: e.target.value,
+                        })
+                      }
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="time">Horário</Label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Input
+                      id="time"
+                      type="time"
+                      value={newAppointment.time}
+                      onChange={(e) =>
+                        setNewAppointment({
+                          ...newAppointment,
+                          time: e.target.value,
+                        })
+                      }
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="name">Nome do Cliente</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Input
+                      id="name"
+                      type="text"
+                      value={newAppointment.name}
+                      onChange={(e) =>
+                        setNewAppointment({
+                          ...newAppointment,
+                          name: e.target.value,
+                        })
+                      }
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  {isLoading ? "Criando..." : "Criar Agendamento"}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
     );
   };
 
   return (
     <div className="relative min-h-screen flex items-center justify-center p-4">
-      <Card className="bg-white">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold">
-            Agenda Administrativa
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center space-x-2">
-              <Button
-                onClick={() =>
-                  setCurrentDate((prev) =>
-                    viewMode === "week"
-                      ? prev.subtract(1, "week")
-                      : prev.subtract(1, "month")
-                  )
-                }
-              >
-                Anterior
-              </Button>
-              <Button onClick={() => setCurrentDate(dayjs())}>Hoje</Button>
-              <Button
-                onClick={() =>
-                  setCurrentDate((prev) =>
-                    viewMode === "week"
-                      ? prev.add(1, "week")
-                      : prev.add(1, "month")
-                  )
-                }
-              >
-                Próximo
-              </Button>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Select
-                value={viewMode}
-                onValueChange={(value: "week" | "month") => setViewMode(value)}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Selecione a visualização" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="week">Semanal</SelectItem>
-                  <SelectItem value="month">Mensal</SelectItem>
-                </SelectContent>
-              </Select>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>Novo Agendamento</Button>
-                </DialogTrigger>
-                <DialogContent className="bg-white">
-                  <DialogHeader>
-                    <DialogTitle>Criar Novo Agendamento</DialogTitle>
-                  </DialogHeader>
-                  <form
-                    onSubmit={handleCreateAppointment}
-                    className="space-y-4"
-                  >
-                    <div>
-                      <Label htmlFor="date">Data</Label>
-                      <div className="relative">
-                        <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                        <Input
-                          id="date"
-                          type="date"
-                          value={newAppointment.date}
-                          onChange={(e) =>
-                            setNewAppointment({
-                              ...newAppointment,
-                              date: e.target.value,
-                            })
-                          }
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="time">Horário</Label>
-                      <div className="relative">
-                        <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                        <Input
-                          id="time"
-                          type="time"
-                          value={newAppointment.time}
-                          onChange={(e) =>
-                            setNewAppointment({
-                              ...newAppointment,
-                              time: e.target.value,
-                            })
-                          }
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="name">Nome do Cliente</Label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                        <Input
-                          id="name"
-                          type="text"
-                          value={newAppointment.name}
-                          onChange={(e) =>
-                            setNewAppointment({
-                              ...newAppointment,
-                              name: e.target.value,
-                            })
-                          }
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : null}
-                      {isLoading ? "Criando..." : "Criar Agendamento"}
-                    </Button>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
-          {error && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          ) : (
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      ) : (
+        <Card className="bg-white">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold">
+              Agenda Administrativa
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            {renderToolbar()}
             <div>
               <h2 className="text-xl font-semibold mb-4">
                 {viewMode === "week"
@@ -441,11 +425,12 @@ export default function AdminCalendar() {
                       .format("DD/MM")}`
                   : currentDate.format("MMMM YYYY")}
               </h2>
-              {viewMode === "week" ? renderWeekView() : renderMonthView()}
+              {renderWeekView()}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
+
       <Dialog open={isSlotDialogOpen} onOpenChange={setIsSlotDialogOpen}>
         <DialogContent className="bg-white">
           <DialogHeader>
