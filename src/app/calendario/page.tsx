@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -92,16 +92,15 @@ export default function AdminCalendar() {
     useState<DailyAppointments[]>();
 
   useEffect(() => {
-    const formattedDate = currentDate.format("YYYY-MM-DD");
-    console.log("formattedDate", formattedDate);
-    loadWeeklyAppointmentsByDay(formattedDate);
+    loadWeeklyAppointmentsByDay();
   }, [currentDate]);
 
-  const loadWeeklyAppointmentsByDay = async (date: string) => {
+  const loadWeeklyAppointmentsByDay = useCallback(async () => {
+    const formattedDate = currentDate.format("YYYY-MM-DD");
     setIsLoading(true);
     setError(null);
     try {
-      const data = await fetchWeeklyAppointmentsByDay(date);
+      const data = await fetchWeeklyAppointmentsByDay(formattedDate);
       setAppointmentsByDay(data);
     } catch (err) {
       setError(
@@ -110,7 +109,7 @@ export default function AdminCalendar() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentDate]);
 
   useEffect(() => {
     if (!selectedSlot || selectedSlot.isFree) return;
@@ -139,22 +138,24 @@ export default function AdminCalendar() {
     setIsDayDialogOpen(false);
   };
 
-  const handleCreateAppointment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      const newId = Math.random().toString(36).substr(2, 9);
-      setAppointments([...appointments, { id: newId, ...newAppointment }]);
-      setIsDialogOpen(false);
-      setNewAppointment({ date: "", time: "", name: "" });
-    } catch (err) {
-      setError("Falha ao criar o agendamento. Por favor, tente novamente.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const handleCreateAppointment = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsLoading(true);
+      setError(null);
+      try {
+        await axios.post("/api/appointment", newAppointment);
+        setIsDialogOpen(false);
+        setNewAppointment({ date: "", time: "", name: "" });
+      } catch (err) {
+        setError("Falha ao criar o agendamento. Por favor, tente novamente.");
+      } finally {
+        setIsLoading(false);
+        loadWeeklyAppointmentsByDay();
+      }
+    },
+    [newAppointment]
+  );
 
   const handleSelectSlot = (slot: TimeSlot) => {
     if (slot.isPast && slot.isFree) return;
