@@ -70,6 +70,15 @@ const fetchDialogAppointment = async (id: string): Promise<Appointment> => {
   }
 };
 
+const fetchCancelAppointment = async (id: string): Promise<void> => {
+  try {
+    await axios.delete(`/api/appointment/${id}`);
+  } catch (error) {
+    console.error("Erro ao buscar dados:", error);
+    throw error;
+  }
+};
+
 export default function AdminCalendar() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -131,9 +140,14 @@ export default function AdminCalendar() {
     }
   };
 
-  const handleCancelAppointment = async (id: string) => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setAppointments(appointments.filter((app) => app.id !== id));
+  const doCancelAppointment = useCallback(async () => {
+    if (!dialogAppointment) return;
+    fetchCancelAppointment(dialogAppointment._id);
+  }, [dialogAppointment]);
+
+  const handleCancelAppointment = async () => {
+    await doCancelAppointment();
+    loadWeeklyAppointmentsByDay();
     setIsSlotDialogOpen(false);
     setIsDayDialogOpen(false);
   };
@@ -154,7 +168,7 @@ export default function AdminCalendar() {
         loadWeeklyAppointmentsByDay();
       }
     },
-    [newAppointment]
+    [newAppointment, loadWeeklyAppointmentsByDay]
   );
 
   const handleSelectSlot = (slot: TimeSlot) => {
@@ -396,9 +410,7 @@ export default function AdminCalendar() {
                   <p>Cliente: {dialogAppointment?.name}</p>
                   <Button
                     variant="destructive"
-                    // onClick={() =>
-                    //   handleCancelAppointment(selectedSlot.appointment!.id)
-                    // }
+                    onClick={handleCancelAppointment}
                     className="mt-2"
                   >
                     Cancelar Agendamento
