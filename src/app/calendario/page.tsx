@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +14,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Calendar as CalendarIcon, Clock, User } from "lucide-react";
+import {
+  Loader2,
+  Calendar as CalendarIcon,
+  Clock,
+  User,
+  CircleUserRound,
+  Mail,
+} from "lucide-react";
 import dayjs from "dayjs";
 import "dayjs/locale/pt-br";
 import weekOfYear from "dayjs/plugin/weekOfYear";
@@ -27,13 +34,15 @@ dayjs.extend(isSameOrAfter);
 dayjs.locale("pt-br");
 
 interface Appointment {
-  id: string;
+  _id: string;
   date: string;
   time: string;
   name: string;
+  email: string | null;
 }
 
 interface TimeSlot {
+  date: string;
   time: string;
   isAvailable: boolean;
   isPast: boolean;
@@ -60,6 +69,25 @@ const fetchWeeklyAppointmentsByDay = async (
   }
 };
 
+const fetchDialogAppointment = async (id: string): Promise<Appointment> => {
+  try {
+    const res = await axios.get(`/api/appointment/${id}`);
+    return res.data;
+  } catch (error) {
+    console.error("Erro ao buscar dados:", error);
+    throw error;
+  }
+};
+
+const fetchCancelAppointment = async (id: string): Promise<void> => {
+  try {
+    await axios.delete(`/api/appointment/${id}`);
+  } catch (error) {
+    console.error("Erro ao buscar dados:", error);
+    throw error;
+  }
+};
+
 export default function AdminCalendar() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -74,23 +102,44 @@ export default function AdminCalendar() {
   const [viewMode, setViewMode] = useState<"week" | "month">("week");
   const [selectedDay, setSelectedDay] = useState<dayjs.Dayjs | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
+  const [dialogAppointment, setDialogAppointment] =
+    useState<Appointment | null>(null);
   const [isSlotDialogOpen, setIsSlotDialogOpen] = useState(false);
   const [isDayDialogOpen, setIsDayDialogOpen] = useState(false);
   const [appointmentsByDay, setAppointmentsByDay] =
     useState<DailyAppointments[]>();
 
   useEffect(() => {
-    const formattedDate = currentDate.format("YYYY-MM-DD");
-    console.log("formattedDate", formattedDate);
-    loadWeeklyAppointmentsByDay(formattedDate);
+    loadWeeklyAppointmentsByDay();
   }, [currentDate]);
 
-  const loadWeeklyAppointmentsByDay = async (date: string) => {
+  const loadWeeklyAppointmentsByDay = useCallback(async () => {
+    const formattedDate = currentDate.format("YYYY-MM-DD");
     setIsLoading(true);
     setError(null);
     try {
-      const data = await fetchWeeklyAppointmentsByDay(date);
+      const data = await fetchWeeklyAppointmentsByDay(formattedDate);
       setAppointmentsByDay(data);
+    } catch (err) {
+      setError(
+        "Falha ao carregar os agendamentos. Por favor, tente novamente."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentDate]);
+
+  useEffect(() => {
+    if (!selectedSlot || selectedSlot.isFree) return;
+    loadDialogAppointment(selectedSlot.appointmentId || "");
+  }, [selectedSlot]);
+
+  const loadDialogAppointment = async (id: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await fetchDialogAppointment(id);
+      setDialogAppointment(data);
     } catch (err) {
       setError(
         "Falha ao carregar os agendamentos. Por favor, tente novamente."
@@ -100,31 +149,49 @@ export default function AdminCalendar() {
     }
   };
 
-  const handleCancelAppointment = async (id: string) => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setAppointments(appointments.filter((app) => app.id !== id));
+  const doCancelAppointment = useCallback(async () => {
+    if (!dialogAppointment) return;
+    fetchCancelAppointment(dialogAppointment._id);
+  }, [dialogAppointment]);
+
+  const handleCancelAppointment = async () => {
+    await doCancelAppointment();
+    loadWeeklyAppointmentsByDay();
     setIsSlotDialogOpen(false);
     setIsDayDialogOpen(false);
   };
 
-  const handleCreateAppointment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      const newId = Math.random().toString(36).substr(2, 9);
-      setAppointments([...appointments, { id: newId, ...newAppointment }]);
-      setIsDialogOpen(false);
-      setNewAppointment({ date: "", time: "", name: "" });
-    } catch (err) {
-      setError("Falha ao criar o agendamento. Por favor, tente novamente.");
-    } finally {
-      setIsLoading(false);
-    }
+  const handleCreateAppointment = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsLoading(true);
+      setError(null);
+      try {
+        await axios.post("/api/appointment", newAppointment);
+        setIsDialogOpen(false);
+        setNewAppointment({ date: "", time: "", name: "" });
+      } catch (err) {
+        setError("Falha ao criar o agendamento. Por favor, tente novamente.");
+      } finally {
+        setIsLoading(false);
+        loadWeeklyAppointmentsByDay();
+      }
+    },
+    [newAppointment, loadWeeklyAppointmentsByDay]
+  );
+
+  const handleSelectSlot = (slot: TimeSlot) => {
+    if (slot.isPast && slot.isFree) return;
+    setSelectedSlot(slot);
+    setIsSlotDialogOpen(true);
   };
 
-  const renderTimeSlots = (slots: TimeSlot[]) => {
+  const renderTimeSlots = (dailyAppointments: DailyAppointments) => {
+    const slots = dailyAppointments.slots.map((slot) => ({
+      ...slot,
+      date: dailyAppointments.date,
+    }));
+
     return (
       <div className="grid grid-cols-2 gap-1">
         {slots.map((slot, index) => (
@@ -139,12 +206,7 @@ export default function AdminCalendar() {
                 ? "hover:bg-green-100"
                 : "bg-blue-100 hover:bg-blue-200"
             }`}
-            // onClick={() => {
-            //   if (!slot.isPast) {
-            //     setSelectedSlot(slot);
-            //     setIsSlotDialogOpen(true);
-            //   }
-            // }}
+            onClick={() => handleSelectSlot(slot)}
             disabled={slot.isPast}
           >
             {slot.time}
@@ -171,7 +233,7 @@ export default function AdminCalendar() {
             <div className="font-semibold mb-2">
               {dayjs(day.date).format("ddd DD/MM")}
             </div>
-            {renderTimeSlots(day.slots)}
+            {renderTimeSlots(day)}
           </div>
         ))}
       </div>
@@ -285,6 +347,12 @@ export default function AdminCalendar() {
     );
   };
 
+  const handleCloseDialog = () => {
+    setIsSlotDialogOpen(false);
+    setSelectedSlot(null);
+    setDialogAppointment(null);
+  };
+
   return (
     <div className="relative min-h-screen flex items-center justify-center p-4">
       {isLoading ? (
@@ -321,26 +389,35 @@ export default function AdminCalendar() {
         </Card>
       )}
 
-      <Dialog open={isSlotDialogOpen} onOpenChange={setIsSlotDialogOpen}>
+      <Dialog open={isSlotDialogOpen} onOpenChange={handleCloseDialog}>
         <DialogContent className="bg-white">
           <DialogHeader>
             <DialogTitle>
-              {selectedSlot?.isAvailable
+              {selectedSlot?.isFree
                 ? "Horário Disponível"
                 : "Detalhes do Agendamento"}
             </DialogTitle>
           </DialogHeader>
           {selectedSlot && (
             <div className="space-y-4">
-              <p>Horário: {selectedSlot.time}</p>
-              {selectedSlot.isAvailable ? (
+              <div className="flex items-center space-x-2">
+                <CalendarIcon className="text-gray-400" />
+                <p>{dayjs(selectedSlot.date).format("DD/MM/YYYY")}</p>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Clock className="text-gray-400" />
+                <p>{selectedSlot?.time}</p>
+              </div>
+
+              {!selectedSlot?.appointmentId ? (
                 <div>
                   <p>Este horário está disponível para agendamento.</p>
                   <Button
                     onClick={() => {
                       setNewAppointment({
                         ...newAppointment,
-                        date: currentDate.format("YYYY-MM-DD"),
+                        date: selectedSlot.date,
                         time: selectedSlot.time,
                       });
                       setIsSlotDialogOpen(false);
@@ -352,18 +429,23 @@ export default function AdminCalendar() {
                   </Button>
                 </div>
               ) : (
-                <div>
-                  <p>Cliente: {selectedSlot.appointment?.name}</p>
-                  <Button
-                    variant="destructive"
-                    onClick={() =>
-                      handleCancelAppointment(selectedSlot.appointment!.id)
-                    }
-                    className="mt-2"
-                  >
+                <>
+                  <div className="flex items-center space-x-2">
+                    <CircleUserRound className="text-gray-400" />
+                    <p>{dialogAppointment?.name}</p>
+                  </div>
+
+                  {dialogAppointment?.email && (
+                    <div className="flex items-center space-x-2">
+                      <Mail className="text-gray-400" />
+                      <p>{dialogAppointment?.email}</p>
+                    </div>
+                  )}
+
+                  <Button onClick={handleCancelAppointment} className="mt-2">
                     Cancelar Agendamento
                   </Button>
-                </div>
+                </>
               )}
             </div>
           )}
