@@ -81,6 +81,11 @@ export default function LoginPage() {
               />
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             </div>
+            <div>
+              <a href="/cadastro" className="text-blue-500 hover:underline">
+                Ainda não tem uma conta? Cadastre-se.
+              </a>
+            </div>
             <Button
               type="submit"
               className="w-full"
