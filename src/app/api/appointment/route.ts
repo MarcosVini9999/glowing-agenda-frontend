@@ -2,9 +2,17 @@ import { API } from "@/lib/API";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export async function GET() {
-  const response = await API.get("/appointment");
-  return NextResponse.json(await response.data);
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const search = searchParams.get("search");
+
+  const response = await API.get("/appointment", {
+    params: {
+      search: search || "",
+    },
+  });
+  console.log(response.data);
+  return NextResponse.json(response.data);
 }
 
 export async function POST(request: NextRequest) {
