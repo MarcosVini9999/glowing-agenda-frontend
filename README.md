@@ -10,7 +10,7 @@ Este projeto foi dividido em um front-end (este repositório) e um [back-end](ht
 
 ## Pré-requisitos
 
-Antes de começar, certifique-se de ter [Node.js (versão 20.9.0)](https://nodejs.org/) e o [Yarn)](https://classic.yarnpkg.com/lang/en/docs/install) instalados em sua máquina.
+Antes de começar, certifique-se de ter [Node.js (versão 20.9.0)](https://nodejs.org/) e o [Yarn](https://classic.yarnpkg.com/lang/en/docs/install) instalados em sua máquina.
 
 ## Tecnologias Utilizadas
 
