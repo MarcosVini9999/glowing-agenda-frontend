@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +33,7 @@ const fetchSlots = async (): Promise<Slot[]> => {
 };
 
 export default function AgendamentoPage() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [availableSlots, setAvailableSlots] = useState<Slot[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -258,35 +260,40 @@ export default function AgendamentoPage() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-lg mx-auto z-10 bg-white bg-opacity-90">
-        <CardHeader>
-          <CardTitle>Agendamento</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {step === 1 && renderWeekSelector()}
-          {step === 2 && renderTimeSelector()}
-          {step === 3 && renderUserForm()}
-          {renderSubmitStatus()}
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          {step > 1 && (
-            <Button
-              onClick={() => setStep((prev) => prev - 1)}
-              variant="outline"
-            >
-              Voltar
-            </Button>
-          )}
-          {step < 3 && selectedDate && (
-            <div className="text-sm">
-              Data selecionada:{" "}
-              {new Date(selectedDate).toLocaleDateString("pt-BR")}
-              {selectedTime && ` às ${selectedTime}`}
-            </div>
-          )}
-        </CardFooter>
-      </Card>
-    </div>
+    <>
+      <div className="relative min-h-screen flex items-center justify-center p-4">
+        <div className="absolute top-4 right-4">
+          <Button onClick={() => router.push("/login")}>Login</Button>
+        </div>
+        <Card className="w-full max-w-lg mx-auto z-10 bg-white bg-opacity-90">
+          <CardHeader>
+            <CardTitle>Agendamento</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {step === 1 && renderWeekSelector()}
+            {step === 2 && renderTimeSelector()}
+            {step === 3 && renderUserForm()}
+            {renderSubmitStatus()}
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            {step > 1 && (
+              <Button
+                onClick={() => setStep((prev) => prev - 1)}
+                variant="outline"
+              >
+                Voltar
+              </Button>
+            )}
+            {step < 3 && selectedDate && (
+              <div className="text-sm">
+                Data selecionada:{" "}
+                {new Date(selectedDate).toLocaleDateString("pt-BR")}
+                {selectedTime && ` às ${selectedTime}`}
+              </div>
+            )}
+          </CardFooter>
+        </Card>
+      </div>
+    </>
   );
 }

@@ -29,6 +29,7 @@ export default function LoginPage() {
     try {
       if (email && password) {
         await login(email, password);
+        localStorage.setItem("isLoggedIn", "true");
         router.push("/calendario");
       } else {
         setError("Preencha todos os campos.");

@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-  const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
+  const isLoggedIn = false;
 
   return (
-    <>{isAdmin ? router.push("/calendario") : router.push("/agendamento")}</>
+    <>{isLoggedIn ? router.push("/calendario") : router.push("/agendamento")}</>
   );
 }
