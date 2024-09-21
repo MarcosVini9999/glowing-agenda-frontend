@@ -22,6 +22,7 @@ import {
   User,
   CircleUserRound,
   Mail,
+  Search,
 } from "lucide-react";
 import dayjs from "dayjs";
 import "dayjs/locale/pt-br";
@@ -270,6 +271,9 @@ export default function AdminCalendar() {
         </div>
         <div className="flex items-center space-x-2">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Button onClick={() => router.push("/calendario/pesquisa")}>
+              <Search />
+            </Button>
             <DialogTrigger asChild>
               <Button>Novo Agendamento</Button>
             </DialogTrigger>
