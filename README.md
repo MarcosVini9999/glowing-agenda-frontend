@@ -21,7 +21,7 @@ Antes de começar, certifique-se de ter [Node.js (versão 20.9.0)](https://nodej
 
 1. Clone o projeto na sua máquina local `git clone https://github.com/MarcosVini9999/glowing-agenda-frontend.git`
 2. Modifique o nome do arquivo `.env.example` para `.env`
-3. Instale as dependências do projeto `yarn`
+3. Instale as dependências do projeto executando o comando `yarn`
 4. Execute o comando para rodar a aplicação localmente `yarn dev`
 5. Acesse a aplicação em `http://localhost:3000`
 
