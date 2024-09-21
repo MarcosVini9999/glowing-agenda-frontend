@@ -435,11 +435,12 @@ export default function AdminCalendar() {
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center space-x-2">
-                    <CircleUserRound className="text-gray-400" />
-                    <p>{dialogAppointment?.name}</p>
-                  </div>
-
+                  {dialogAppointment?.name && (
+                    <div className="flex items-center space-x-2">
+                      <CircleUserRound className="text-gray-400" />
+                      <p>{dialogAppointment?.name}</p>
+                    </div>
+                  )}
                   {dialogAppointment?.email && (
                     <div className="flex items-center space-x-2">
                       <Mail className="text-gray-400" />
