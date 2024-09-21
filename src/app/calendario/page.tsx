@@ -14,7 +14,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Calendar as CalendarIcon, Clock, User } from "lucide-react";
+import {
+  Loader2,
+  Calendar as CalendarIcon,
+  Clock,
+  User,
+  CircleUserRound,
+  Mail,
+} from "lucide-react";
 import dayjs from "dayjs";
 import "dayjs/locale/pt-br";
 import weekOfYear from "dayjs/plugin/weekOfYear";
@@ -31,9 +38,11 @@ interface Appointment {
   date: string;
   time: string;
   name: string;
+  email: string | null;
 }
 
 interface TimeSlot {
+  date: string;
   time: string;
   isAvailable: boolean;
   isPast: boolean;
@@ -177,7 +186,12 @@ export default function AdminCalendar() {
     setIsSlotDialogOpen(true);
   };
 
-  const renderTimeSlots = (slots: TimeSlot[]) => {
+  const renderTimeSlots = (dailyAppointments: DailyAppointments) => {
+    const slots = dailyAppointments.slots.map((slot) => ({
+      ...slot,
+      date: dailyAppointments.date,
+    }));
+
     return (
       <div className="grid grid-cols-2 gap-1">
         {slots.map((slot, index) => (
@@ -219,7 +233,7 @@ export default function AdminCalendar() {
             <div className="font-semibold mb-2">
               {dayjs(day.date).format("ddd DD/MM")}
             </div>
-            {renderTimeSlots(day.slots)}
+            {renderTimeSlots(day)}
           </div>
         ))}
       </div>
@@ -386,7 +400,16 @@ export default function AdminCalendar() {
           </DialogHeader>
           {selectedSlot && (
             <div className="space-y-4">
-              <p>Horário: {selectedSlot?.time}</p>
+              <div className="flex items-center space-x-2">
+                <CalendarIcon className="text-gray-400" />
+                <p>{dayjs(selectedSlot.date).format("DD/MM/YYYY")}</p>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Clock className="text-gray-400" />
+                <p>{selectedSlot?.time}</p>
+              </div>
+
               {!selectedSlot?.appointmentId ? (
                 <div>
                   <p>Este horário está disponível para agendamento.</p>
@@ -394,7 +417,7 @@ export default function AdminCalendar() {
                     onClick={() => {
                       setNewAppointment({
                         ...newAppointment,
-                        date: currentDate.format("YYYY-MM-DD"),
+                        date: selectedSlot.date,
                         time: selectedSlot.time,
                       });
                       setIsSlotDialogOpen(false);
@@ -406,16 +429,23 @@ export default function AdminCalendar() {
                   </Button>
                 </div>
               ) : (
-                <div>
-                  <p>Cliente: {dialogAppointment?.name}</p>
-                  <Button
-                    variant="destructive"
-                    onClick={handleCancelAppointment}
-                    className="mt-2"
-                  >
+                <>
+                  <div className="flex items-center space-x-2">
+                    <CircleUserRound className="text-gray-400" />
+                    <p>{dialogAppointment?.name}</p>
+                  </div>
+
+                  {dialogAppointment?.email && (
+                    <div className="flex items-center space-x-2">
+                      <Mail className="text-gray-400" />
+                      <p>{dialogAppointment?.email}</p>
+                    </div>
+                  )}
+
+                  <Button onClick={handleCancelAppointment} className="mt-2">
                     Cancelar Agendamento
                   </Button>
-                </div>
+                </>
               )}
             </div>
           )}
