@@ -69,8 +69,6 @@ export default function PesquisaCalendario() {
   }, [searchString]);
 
   const renderAppointments = () => {
-    const today = dayjs().format("YYYY-MM-DD");
-
     if (!appointments) {
       return null;
     }
@@ -80,7 +78,7 @@ export default function PesquisaCalendario() {
         {appointments.map((appointment) => (
           <div
             key={appointment.date}
-            className="flex flex-col gap-2 p-4 border border-gray-200 rounded-md min-w-[300px] max-w-[400px] shadow"
+            className="flex flex-col gap-2 p-4 border border-gray-200 rounded-md min-w-[300px] max-w-[400px] shadow mt-4"
           >
             <div className="flex items-center space-x-2">
               <CalendarIcon className="text-gray-400" />
@@ -118,13 +116,13 @@ export default function PesquisaCalendario() {
 
   const renderToolbar = () => {
     return (
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center">
         <Input
           type="text"
           placeholder="Buscar"
           value={searchString}
           onChange={(e) => setSearchString(e.target.value)}
-          className="min-w-[600px]"
+          className="min-w-[500px]"
         />
       </div>
     );
@@ -155,7 +153,7 @@ export default function PesquisaCalendario() {
               </CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="p-4">
+          <CardContent>
             <div>{renderToolbar()}</div>
             <div>{renderAppointments()}</div>
           </CardContent>
