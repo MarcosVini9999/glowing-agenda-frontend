@@ -4,16 +4,15 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Mail, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
+
+const login = async (email: string, password: string) => {
+  await axios.post("/api/auth/login", { email, password });
+};
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -28,18 +27,14 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
       if (email && password) {
-        console.log("Login successful", { email, password });
-        router.push("/agendamento");
+        await login(email, password);
+        router.push("/calendario");
       } else {
-        throw new Error("Por favor, preencha todos os campos.");
+        setError("Preencha todos os campos.");
       }
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Ocorreu um erro ao fazer login."
-      );
+      setError("E-mail ou senha incorretos.");
     } finally {
       setIsLoading(false);
     }
