@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -89,6 +90,7 @@ const fetchCancelAppointment = async (id: string): Promise<void> => {
 };
 
 export default function AdminCalendar() {
+  const router = useRouter();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -355,6 +357,9 @@ export default function AdminCalendar() {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center p-4">
+      <div className="absolute top-4 right-4">
+        <Button onClick={() => router.push("/login")}>Logout</Button>
+      </div>
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
           <Loader2 className="h-8 w-8 animate-spin" />
@@ -430,11 +435,12 @@ export default function AdminCalendar() {
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center space-x-2">
-                    <CircleUserRound className="text-gray-400" />
-                    <p>{dialogAppointment?.name}</p>
-                  </div>
-
+                  {dialogAppointment?.name && (
+                    <div className="flex items-center space-x-2">
+                      <CircleUserRound className="text-gray-400" />
+                      <p>{dialogAppointment?.name}</p>
+                    </div>
+                  )}
                   {dialogAppointment?.email && (
                     <div className="flex items-center space-x-2">
                       <Mail className="text-gray-400" />

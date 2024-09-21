@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const response = await axios.post("http://localhost:3000/schedule", body, {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/schedule`, body, {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
