@@ -14,8 +14,10 @@ Antes de começar, certifique-se de ter [Node.js (versão 20.9.0)](https://nodej
 
 ## Tecnologias Utilizadas
 
+- React
 - Next.js
 - ShadCN/UI
+- TailwindCSS
 
 ## Como executar o projeto localmente
 
