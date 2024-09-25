@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import BubbleBackground from "@/components/BubbleBackground";
+import Image from "next/image";
+import logo from "../../docs/img/icon.png";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -18,9 +20,6 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Glowing Agenda",
     description: "Agende seu horário de forma rápida e prática com a Glowing Agenda.",
-    authors: [
-      { name: "Marcos Vinicius Andrade de Sousa", url: "marcosviniciusandradedesousa@hotmail.com" },
-    ],
     applicationName: "Glowing Agenda",
     keywords: ["Agenda", "Glowing", "Agendamento"],
     generator: "Next.js",
@@ -35,7 +34,12 @@ export default function RootLayout({
   return (
     <html lang="pt-br">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <main className="relative z-10 container mx-auto">{children}</main>
+        <main className="relative z-10 container mx-auto">
+          <div className="absolute top-8 transform -translate-x-1/2">
+            <Image src={logo} alt="Logo Glowing Agenda" width={250} height={250} priority={true} />
+          </div>
+          {children}
+        </main>
         <BubbleBackground />
       </body>
     </html>
