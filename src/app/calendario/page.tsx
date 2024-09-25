@@ -57,9 +57,7 @@ interface DailyAppointments {
   slots: TimeSlot[];
 }
 
-const fetchWeeklyAppointmentsByDay = async (
-  date: string
-): Promise<DailyAppointments[]> => {
+const fetchWeeklyAppointmentsByDay = async (date: string): Promise<DailyAppointments[]> => {
   try {
     const res = await axios.get("/api/calendar/week", {
       params: { date },
@@ -105,12 +103,10 @@ export default function AdminCalendar() {
   const [viewMode, setViewMode] = useState<"week" | "month">("week");
   const [selectedDay, setSelectedDay] = useState<dayjs.Dayjs | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
-  const [dialogAppointment, setDialogAppointment] =
-    useState<Appointment | null>(null);
+  const [dialogAppointment, setDialogAppointment] = useState<Appointment | null>(null);
   const [isSlotDialogOpen, setIsSlotDialogOpen] = useState(false);
   const [isDayDialogOpen, setIsDayDialogOpen] = useState(false);
-  const [appointmentsByDay, setAppointmentsByDay] =
-    useState<DailyAppointments[]>();
+  const [appointmentsByDay, setAppointmentsByDay] = useState<DailyAppointments[]>();
 
   useEffect(() => {
     loadWeeklyAppointmentsByDay();
@@ -124,9 +120,7 @@ export default function AdminCalendar() {
       const data = await fetchWeeklyAppointmentsByDay(formattedDate);
       setAppointmentsByDay(data);
     } catch (err) {
-      setError(
-        "Falha ao carregar os agendamentos. Por favor, tente novamente."
-      );
+      setError("Falha ao carregar os agendamentos. Por favor, tente novamente.");
     } finally {
       setIsLoading(false);
     }
@@ -144,9 +138,7 @@ export default function AdminCalendar() {
       const data = await fetchDialogAppointment(id);
       setDialogAppointment(data);
     } catch (err) {
-      setError(
-        "Falha ao carregar os agendamentos. Por favor, tente novamente."
-      );
+      setError("Falha ao carregar os agendamentos. Por favor, tente novamente.");
     } finally {
       setIsLoading(false);
     }
@@ -229,13 +221,8 @@ export default function AdminCalendar() {
     return (
       <div className="grid grid-cols-7 gap-2">
         {appointmentsByDay.map((day) => (
-          <div
-            key={day.date}
-            className={`border p-2 ${day.date === today ? "bg-blue-100" : ""}`}
-          >
-            <div className="font-semibold mb-2">
-              {dayjs(day.date).format("ddd DD/MM")}
-            </div>
+          <div key={day.date} className={`border p-2 ${day.date === today ? "bg-blue-100" : ""}`}>
+            <div className="font-semibold mb-2">{dayjs(day.date).format("ddd DD/MM")}</div>
             {renderTimeSlots(day)}
           </div>
         ))}
@@ -250,9 +237,7 @@ export default function AdminCalendar() {
           <Button
             onClick={() =>
               setCurrentDate((prev) =>
-                viewMode === "week"
-                  ? prev.subtract(1, "week")
-                  : prev.subtract(1, "month")
+                viewMode === "week" ? prev.subtract(1, "week") : prev.subtract(1, "month")
               )
             }
           >
@@ -340,9 +325,7 @@ export default function AdminCalendar() {
                   </div>
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
+                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   {isLoading ? "Criando..." : "Criar Agendamento"}
                 </Button>
               </form>
@@ -371,9 +354,7 @@ export default function AdminCalendar() {
       ) : (
         <Card className="bg-white">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold">
-              Agenda Administrativa
-            </CardTitle>
+            <CardTitle className="text-2xl font-bold">Agenda Administrativa</CardTitle>
           </CardHeader>
           <CardContent>
             {error && (
@@ -385,9 +366,7 @@ export default function AdminCalendar() {
             <div>
               <h2 className="text-xl font-semibold mb-4">
                 {viewMode === "week"
-                  ? `Semana de ${currentDate
-                      .startOf("week")
-                      .format("DD/MM")} a ${currentDate
+                  ? `Semana de ${currentDate.startOf("week").format("DD/MM")} a ${currentDate
                       .endOf("week")
                       .format("DD/MM")}`
                   : currentDate.format("MMMM YYYY")}
@@ -402,9 +381,7 @@ export default function AdminCalendar() {
         <DialogContent className="bg-white">
           <DialogHeader>
             <DialogTitle>
-              {selectedSlot?.isFree
-                ? "Horário Disponível"
-                : "Detalhes do Agendamento"}
+              {selectedSlot?.isFree ? "Horário Disponível" : "Detalhes do Agendamento"}
             </DialogTitle>
           </DialogHeader>
           {selectedSlot && (
@@ -464,13 +441,9 @@ export default function AdminCalendar() {
       <Dialog open={isDayDialogOpen} onOpenChange={setIsDayDialogOpen}>
         <DialogContent className="bg-white">
           <DialogHeader>
-            <DialogTitle>
-              {selectedDay && selectedDay.format("DD 'de' MMMM")}
-            </DialogTitle>
+            <DialogTitle>{selectedDay && selectedDay.format("DD 'de' MMMM")}</DialogTitle>
           </DialogHeader>
-          {selectedDay && (
-            <div className="space-y-4">{renderTimeSlots(selectedDay)}</div>
-          )}
+          {selectedDay && <div className="space-y-4">{renderTimeSlots(selectedDay)}</div>}
         </DialogContent>
       </Dialog>
     </div>

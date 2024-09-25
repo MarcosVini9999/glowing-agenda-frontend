@@ -35,7 +35,7 @@ export default function RootLayout({
     <html lang="pt-br">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <main className="relative z-10 container mx-auto">
-          <div className="absolute top-8 transform -translate-x-1/2">
+          <div className="absolute top-4 left-4">
             <Image src={logo} alt="Logo Glowing Agenda" width={250} height={250} priority={true} />
           </div>
           {children}
