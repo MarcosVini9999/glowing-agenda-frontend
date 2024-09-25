@@ -20,6 +20,7 @@ import "dayjs/locale/pt-br";
 import weekOfYear from "dayjs/plugin/weekOfYear";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
+import { formatarCpfCnpj } from "@/utils/cpf-cnpj";
 
 dayjs.extend(weekOfYear);
 dayjs.extend(isSameOrBefore);
@@ -35,9 +36,7 @@ interface Appointment {
   cpf: string | null;
 }
 
-const fetchSearchAppointments = async (
-  search: string
-): Promise<Appointment[]> => {
+const fetchSearchAppointments = async (search: string): Promise<Appointment[]> => {
   try {
     const res = await axios.get("/api/appointment", {
       params: { search },
@@ -105,7 +104,7 @@ export default function PesquisaCalendario() {
             {appointment?.cpf && (
               <div className="flex items-center space-x-2">
                 <IdCard className="text-gray-400" />
-                <p>{appointment?.cpf}</p>
+                <p>{formatarCpfCnpj(appointment?.cpf)}</p>
               </div>
             )}
           </div>
@@ -148,9 +147,7 @@ export default function PesquisaCalendario() {
                 <CircleArrowLeft />
               </a>
 
-              <CardTitle className="text-2xl font-bold">
-                Agenda Administrativa
-              </CardTitle>
+              <CardTitle className="text-2xl font-bold">Agenda Administrativa</CardTitle>
             </div>
           </CardHeader>
           <CardContent>

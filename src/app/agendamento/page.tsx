@@ -1,20 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import axios from "axios";
+import { formatarCpfCnpj } from "@/utils/cpf-cnpj";
 
 interface Slot {
   day: number;
@@ -42,9 +37,16 @@ export default function AgendamentoPage() {
   const [userData, setUserData] = useState({ cpf: "", name: "", email: "" });
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<
-    "idle" | "success" | "error"
-  >("idle");
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+
+  const handleCpfChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.value.length > 14) {
+      return;
+    }
+
+    const formattedValue = formatarCpfCnpj(e.target.value);
+    setUserData((prev) => ({ ...prev, cpf: formattedValue }));
+  };
 
   useEffect(() => {
     setIsLoading(true);
@@ -99,8 +101,8 @@ export default function AgendamentoPage() {
         <Alert variant="destructive">
           <AlertTitle>Erro</AlertTitle>
           <AlertDescription>
-            Não foi possível carregar os horários disponíveis. Por favor, tente
-            novamente mais tarde.
+            Não foi possível carregar os horários disponíveis. Por favor, tente novamente mais
+            tarde.
           </AlertDescription>
         </Alert>
       );
@@ -128,8 +130,7 @@ export default function AgendamentoPage() {
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span className="font-semibold">
-            {startDate.toLocaleDateString("pt-BR")} -{" "}
-            {endDate.toLocaleDateString("pt-BR")}
+            {startDate.toLocaleDateString("pt-BR")} - {endDate.toLocaleDateString("pt-BR")}
           </span>
           <Button
             onClick={() => setWeekOffset((prev) => prev + 1)}
@@ -153,9 +154,7 @@ export default function AgendamentoPage() {
                   weekday: "short",
                 })}
               </span>
-              <span className="text-lg">
-                {new Date(slot.date + "T00:00:00").getDate()}
-              </span>
+              <span className="text-lg">{new Date(slot.date + "T00:00:00").getDate()}</span>
             </Button>
           ))}
         </div>
@@ -164,14 +163,11 @@ export default function AgendamentoPage() {
   };
 
   const renderTimeSelector = () => {
-    const selectedSlot = availableSlots.find(
-      (slot) => slot.date === selectedDate
-    );
+    const selectedSlot = availableSlots.find((slot) => slot.date === selectedDate);
     return (
       <div className="space-y-4">
         <h3 className="font-semibold">
-          Selecione um horário para{" "}
-          {new Date(selectedDate!).toLocaleDateString("pt-BR")}
+          Selecione um horário para {new Date(selectedDate!).toLocaleDateString("pt-BR")}
         </h3>
         <div className="grid grid-cols-4 gap-2">
           {selectedSlot?.slots.map((time) => (
@@ -192,23 +188,14 @@ export default function AgendamentoPage() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="cpf">CPF</Label>
-        <Input
-          id="cpf"
-          value={userData.cpf}
-          onChange={(e) =>
-            setUserData((prev) => ({ ...prev, cpf: e.target.value }))
-          }
-          required
-        />
+        <Input id="cpf" value={userData.cpf} onChange={handleCpfChange} required />
       </div>
       <div className="space-y-2">
         <Label htmlFor="name">Nome</Label>
         <Input
           id="name"
           value={userData.name}
-          onChange={(e) =>
-            setUserData((prev) => ({ ...prev, name: e.target.value }))
-          }
+          onChange={(e) => setUserData((prev) => ({ ...prev, name: e.target.value }))}
           required
         />
       </div>
@@ -218,16 +205,12 @@ export default function AgendamentoPage() {
           id="email"
           type="email"
           value={userData.email}
-          onChange={(e) =>
-            setUserData((prev) => ({ ...prev, email: e.target.value }))
-          }
+          onChange={(e) => setUserData((prev) => ({ ...prev, email: e.target.value }))}
           required
         />
       </div>
       <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        ) : null}
+        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
         {isSubmitting ? "Agendando..." : "Agendar"}
       </Button>
     </form>
@@ -240,8 +223,7 @@ export default function AgendamentoPage() {
           <AlertTitle>Sucesso!</AlertTitle>
           <AlertDescription>
             Seu agendamento foi realizado com sucesso para{" "}
-            {new Date(selectedDate!).toLocaleDateString("pt-BR")} às{" "}
-            {selectedTime}.
+            {new Date(selectedDate!).toLocaleDateString("pt-BR")} às {selectedTime}.
           </AlertDescription>
         </Alert>
       );
@@ -250,8 +232,7 @@ export default function AgendamentoPage() {
         <Alert variant="destructive" className="mt-4">
           <AlertTitle>Erro</AlertTitle>
           <AlertDescription>
-            Ocorreu um erro ao realizar o agendamento. Por favor, tente
-            novamente mais tarde.
+            Ocorreu um erro ao realizar o agendamento. Por favor, tente novamente mais tarde.
           </AlertDescription>
         </Alert>
       );
@@ -277,17 +258,13 @@ export default function AgendamentoPage() {
           </CardContent>
           <CardFooter className="flex justify-between">
             {step > 1 && (
-              <Button
-                onClick={() => setStep((prev) => prev - 1)}
-                variant="outline"
-              >
+              <Button onClick={() => setStep((prev) => prev - 1)} variant="outline">
                 Voltar
               </Button>
             )}
             {step < 3 && selectedDate && (
               <div className="text-sm">
-                Data selecionada:{" "}
-                {new Date(selectedDate).toLocaleDateString("pt-BR")}
+                Data selecionada: {new Date(selectedDate).toLocaleDateString("pt-BR")}
                 {selectedTime && ` às ${selectedTime}`}
               </div>
             )}
